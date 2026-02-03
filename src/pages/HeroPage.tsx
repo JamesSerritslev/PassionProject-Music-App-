@@ -24,8 +24,8 @@ export default function HeroPage() {
   return (
     <div className="hero-page">
       <header className="hero-header">
-        <h1 className="hero-title">BandScope</h1>
         <div className="hero-search-wrap">
+          <span className="hero-search-icon" aria-hidden>🔍</span>
           <input
             type="search"
             placeholder="Search by name or location..."
@@ -34,9 +34,8 @@ export default function HeroPage() {
             className="hero-search"
             aria-label="Search profiles"
           />
-          <span className="hero-search-icon" aria-hidden>🔍</span>
         </div>
-        <p className="hero-sub">Discover musicians and bands</p>
+        <h1 className="hero-heading">Discover musicians and bands</h1>
       </header>
 
       <section className="hero-feed">

@@ -67,6 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!supabase) {
+      // Auto sign-in for demo when Supabase not configured
+      setUser({ id: 'mock-user', email: 'demo@bandscope.app' })
+      setProfileState(MOCK_PROFILE)
       setLoading(false)
       return
     }

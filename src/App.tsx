@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
-import BottomNav from '@/components/BottomNav'
+import SideNav from '@/components/BottomNav'
 import LoginPage from '@/pages/LoginPage'
 import SignupPage from '@/pages/SignupPage'
 import ProfileSetupPage from '@/pages/ProfileSetupPage'
@@ -32,8 +32,8 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <SideNav />
       <main>{children}</main>
-      <BottomNav />
     </>
   )
 }
