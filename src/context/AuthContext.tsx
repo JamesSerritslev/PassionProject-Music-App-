@@ -27,6 +27,7 @@ const MOCK_PROFILE: Profile = {
   role: 'musician',
   display_name: 'Demo User',
   avatar_url: null,
+  gallery_urls: null,
   location: 'New York, NY',
   bio: 'Edit your profile to add a bio.',
   links: null,

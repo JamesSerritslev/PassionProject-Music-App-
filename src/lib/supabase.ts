@@ -19,6 +19,7 @@ export interface Profile {
   role: UserRole
   display_name: string
   avatar_url: string | null
+  gallery_urls: string[] | null
   location: string | null
   bio: string | null
   links: string[] | null
