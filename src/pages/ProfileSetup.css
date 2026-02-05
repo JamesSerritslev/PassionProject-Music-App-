@@ -24,6 +24,13 @@
   margin: 0 0 var(--space-6);
 }
 
+.ps-error,
+.auth-error {
+  color: var(--color-error);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
 .profile-setup-form {
   display: flex;
   flex-direction: column;

@@ -20,7 +20,7 @@ export default function SideNav() {
           key={to}
           to={to}
           className={({ isActive }) => `side-nav-link ${isActive ? 'active' : ''}`}
-          end={to === '/'}
+          end={to === '/' || to === '/profile'}
         >
           <span className="side-nav-icon" aria-hidden>{icon}</span>
           <span className="side-nav-label">{label}</span>

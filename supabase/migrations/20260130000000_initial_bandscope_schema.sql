@@ -6,6 +6,10 @@
 -- PROFILES
 -- Extends auth.users with role-specific data (musician, band, venue)
 -- =============================================================================
+
+-- Enable uuid-ossp extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 create table if not exists public.profiles (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete cascade not null unique,

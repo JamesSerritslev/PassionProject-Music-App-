@@ -1,16 +1,19 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import type { Profile } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
+import type { Profile, UserRole } from '@/lib/supabase'
 import './ProfileSetup.css'
 
 const GENRES = ['Rock', 'Indie', 'Jazz', 'Pop', 'Alternative', 'Funk', 'Electronic', 'Folk', 'Metal', 'Punk']
 const INSTRUMENTS = ['Guitar', 'Bass', 'Drums', 'Keys', 'Vocals', 'Percussion', 'Saxophone', 'Trumpet', 'Violin', 'Other']
 
 export default function ProfileSetupPage() {
-  const { profile, setProfile } = useAuth()
+  const { user, profile, setProfile, refreshProfile } = useAuth()
   const navigate = useNavigate()
-  if (!profile) return <Navigate to="/signup" replace />
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [roleFromSignup, setRoleFromSignup] = useState<UserRole | null>(null)
   const [form, setForm] = useState({
     display_name: profile?.display_name ?? '',
     location: profile?.location ?? '',
@@ -24,42 +27,86 @@ export default function ProfileSetupPage() {
     members: profile?.members ?? [] as { name: string; age?: number }[],
   })
 
+  useEffect(() => {
+    if (profile) {
+      setForm({
+        display_name: profile.display_name ?? '',
+        location: profile.location ?? '',
+        bio: profile.bio ?? '',
+        age: profile.age ?? '',
+        genres: profile.genres ?? [],
+        instruments: profile.instruments ?? [],
+        seeking: profile.seeking ?? [],
+        roles: profile.roles ?? [],
+        influences: (profile.influences ?? []).join(', '),
+        members: profile.members ?? [],
+      })
+    }
+  }, [profile])
+
   function toggleArray(arr: string[], item: string) {
     return arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item]
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const updated: Profile = {
-      ...profile!,
-      display_name: form.display_name.trim() || 'Anonymous',
+    if (!user) return
+    setError('')
+    setLoading(true)
+    const displayName = form.display_name.trim() || 'Anonymous'
+    const payload = {
+      display_name: displayName,
       location: form.location.trim() || null,
       bio: form.bio.trim() || null,
       age: form.age ? Number(form.age) : null,
-      genres: form.genres.length ? form.genres : null,
-      instruments: form.instruments.length ? form.instruments : null,
-      seeking: form.seeking.length ? form.seeking : null,
-      roles: form.roles.length ? form.roles : null,
-      influences: form.influences.trim() ? form.influences.split(',').map((s) => s.trim()).filter(Boolean) : null,
-      members: form.members.length ? form.members : null,
-      updated_at: new Date().toISOString(),
+      genres: form.genres.length ? form.genres : [],
+      instruments: form.instruments.length ? form.instruments : [],
+      seeking: form.seeking.length ? form.seeking : [],
+      roles: form.roles.length ? form.roles : [],
+      influences: form.influences.trim() ? form.influences.split(',').map((s) => s.trim()).filter(Boolean) : [],
+      members: form.members.length ? form.members : [],
+      last_active_at: new Date().toISOString(),
     }
-    setProfile(updated)
+    if (supabase) {
+      if (profile) {
+        const { error: err } = await supabase.from('profiles').update(payload).eq('id', profile.id)
+        if (err) {
+          setError(err.message)
+          setLoading(false)
+          return
+        }
+      } else {
+        const { data: { session } } = await supabase.auth.getSession()
+        const role = (session?.user?.user_metadata?.role as UserRole) ?? 'musician'
+        const { error: err } = await supabase.from('profiles').insert({ user_id: user.id, role, ...payload })
+        if (err) {
+          setError(err.message)
+          setLoading(false)
+          return
+        }
+      }
+      await refreshProfile()
+    } else if (profile) {
+      setProfile({ ...profile, ...payload, updated_at: new Date().toISOString() })
+    }
+    setLoading(false)
     navigate('/', { replace: true })
   }
 
-  if (!profile) return <Navigate to="/signup" replace />
+  if (!user) return <Navigate to="/login" replace />
 
-  const isBand = profile.role === 'band'
-  const isMusician = profile.role === 'musician'
+  const role = profile?.role ?? roleFromSignup ?? 'musician'
+  const isBand = role === 'band'
+  const isMusician = role === 'musician'
 
   return (
     <div className="profile-setup-page">
       <div className="profile-setup-card">
         <h1>Complete your profile</h1>
-        <p className="profile-setup-sub">You're signing up as a <strong>{profile?.role}</strong>. Add your details below.</p>
+        <p className="profile-setup-sub">You're signing up as a <strong>{role}</strong>. Add your details below.</p>
 
         <form onSubmit={handleSubmit} className="profile-setup-form">
+          {error && <p className="auth-error">{error}</p>}
           <label className="ps-label">
             Display name *
             <input
@@ -200,7 +247,9 @@ export default function ProfileSetupPage() {
               </label>
             </>
           )}
-          <button type="submit" className="ps-submit">Complete setup</button>
+          <button type="submit" disabled={loading} className="ps-submit">
+            {loading ? 'Saving…' : 'Complete setup'}
+          </button>
         </form>
       </div>
     </div>

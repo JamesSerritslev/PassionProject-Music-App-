@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/lib/supabase'
 import type { Profile } from '@/lib/supabase'
 import './ProfileSetup.css'
 
@@ -8,8 +9,10 @@ const GENRES = ['Rock', 'Indie', 'Jazz', 'Pop', 'Alternative', 'Funk', 'Electron
 const INSTRUMENTS = ['Guitar', 'Bass', 'Drums', 'Keys', 'Vocals', 'Percussion', 'Saxophone', 'Trumpet', 'Violin', 'Other']
 
 export default function EditProfilePage() {
-  const { profile, setProfile } = useAuth()
+  const { profile, setProfile, refreshProfile } = useAuth()
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const [form, setForm] = useState({
     display_name: profile?.display_name ?? '',
@@ -28,25 +31,40 @@ export default function EditProfilePage() {
     return arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item]
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!profile) return
-    const updated: Profile = {
-      ...profile,
-      display_name: form.display_name.trim() || 'Anonymous',
-      location: form.location.trim() || null,
-      bio: form.bio.trim() || null,
-      age: form.age ? Number(form.age) : null,
-      genres: form.genres.length ? form.genres : null,
-      instruments: form.instruments.length ? form.instruments : null,
-      seeking: form.seeking.length ? form.seeking : null,
-      roles: form.roles.length ? form.roles : null,
-      influences: form.influences.trim() ? form.influences.split(',').map((s) => s.trim()).filter(Boolean) : null,
-      members: form.members.length ? form.members : null,
-      updated_at: new Date().toISOString(),
+    setError('')
+    setLoading(true)
+    try {
+      const payload = {
+        display_name: form.display_name.trim() || 'Anonymous',
+        location: form.location.trim() || null,
+        bio: form.bio.trim() || null,
+        age: form.age ? Number(form.age) : null,
+        genres: form.genres.length ? form.genres : [],
+        instruments: form.instruments.length ? form.instruments : [],
+        seeking: form.seeking.length ? form.seeking : [],
+        roles: form.roles.length ? form.roles : [],
+        influences: form.influences.trim() ? form.influences.split(',').map((s) => s.trim()).filter(Boolean) : [],
+        members: form.members.length ? form.members : [],
+        last_active_at: new Date().toISOString(),
+      }
+      if (supabase) {
+        const { error: err } = await supabase.from('profiles').update(payload).eq('id', profile.id)
+        if (err) {
+          setError(err.message)
+          return
+        }
+        setProfile({ ...profile, ...payload, updated_at: new Date().toISOString() })
+        refreshProfile()
+      } else {
+        setProfile({ ...profile, ...payload, updated_at: new Date().toISOString() })
+      }
+      navigate('/profile', { replace: true })
+    } finally {
+      setLoading(false)
     }
-    setProfile(updated)
-    navigate('/profile', { replace: true })
   }
 
   const isBand = profile?.role === 'band'
@@ -58,6 +76,7 @@ export default function EditProfilePage() {
         <h1>Edit profile</h1>
 
         <form onSubmit={handleSubmit} className="profile-setup-form">
+          {error && <p className="auth-error">{error}</p>}
           <label className="ps-label">
             Display name *
             <input
@@ -194,7 +213,9 @@ export default function EditProfilePage() {
               </label>
             </>
           )}
-          <button type="submit" className="ps-submit">Save changes</button>
+          <button type="submit" disabled={loading} className="ps-submit">
+            {loading ? 'Saving…' : 'Save changes'}
+          </button>
           <button type="button" className="ps-cancel" onClick={() => navigate('/profile')}>
             Cancel
           </button>
