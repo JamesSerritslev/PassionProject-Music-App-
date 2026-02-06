@@ -19,6 +19,8 @@ export default function ProfileSetupPage() {
   const [form, setForm] = useState({
     display_name: profile?.display_name ?? '',
     location: profile?.location ?? '',
+    latitude: profile?.latitude ?? null as number | null,
+    longitude: profile?.longitude ?? null as number | null,
     bio: profile?.bio ?? '',
     age: profile?.age ?? '',
     genres: profile?.genres ?? [] as string[],
@@ -61,6 +63,8 @@ export default function ProfileSetupPage() {
     const payload = {
       display_name: displayName,
       location: form.location.trim() || null,
+      latitude: form.latitude ?? null,
+      longitude: form.longitude ?? null,
       bio: form.bio.trim() || null,
       age: form.age ? Number(form.age) : null,
       genres: form.genres.length ? form.genres : [],
