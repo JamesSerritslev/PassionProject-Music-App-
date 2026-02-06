@@ -14,6 +14,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signUp: (email: string, password: string, role?: UserRole) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
+  deleteProfile: () => Promise<{ error: string | null }>
   setProfile: (profile: Profile | null) => void
   refreshProfile: () => Promise<void>
 }
@@ -114,12 +115,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfileState(MOCK_PROFILE)
       return { error: null }
     }
+    // Don't set AuthContext loading – it would unmount LoginPage and lose error state
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return { error: error.message }
+    if (error) {
+      return { error: error.message }
+    }
     if (data?.user) {
       setUser({ id: data.user.id, email: data.user.email ?? '' })
-      setLoading(false)
-      fetchProfile(data.user.id).then((p) => setProfileState(p))
+      const p = await fetchProfile(data.user.id)
+      setProfileState(p)
     }
     return { error: null }
   }, [fetchProfile])
@@ -130,19 +134,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfileState({ ...MOCK_PROFILE, display_name: email.split('@')[0], role })
       return { error: null }
     }
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { role } },
     })
-    return { error: error?.message ?? null }
-  }, [])
+    if (error) return { error: error.message }
+    if (data?.user) {
+      setUser({ id: data.user.id, email: data.user.email ?? '' })
+      const p = await fetchProfile(data.user.id)
+      setProfileState(p)
+    }
+    return { error: null }
+  }, [fetchProfile])
 
   const signOut = useCallback(async () => {
     if (supabase) await supabase.auth.signOut()
     setUser(null)
     setProfileState(null)
   }, [])
+
+  const deleteProfile = useCallback(async (): Promise<{ error: string | null }> => {
+    if (!user) return { error: 'Not signed in' }
+    if (supabase) {
+      const { data, error } = await supabase.functions.invoke('delete-account')
+      if (error) return { error: error.message }
+      const err = (data as { error?: string })?.error
+      if (err) return { error: err }
+    }
+    await signOut()
+    return { error: null }
+  }, [user, signOut])
 
   const value: AuthState = {
     user,
@@ -151,6 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     signOut,
+    deleteProfile,
     setProfile,
     refreshProfile,
   }

@@ -13,10 +13,10 @@ import EventDetailPage from '@/pages/EventDetailPage'
 import CreateEventPage from '@/pages/CreateEventPage'
 import MyEventsPage from '@/pages/MyEventsPage'
 import MorePage from '@/pages/MorePage'
-import SettingsPage from '@/pages/SettingsPage'
+import SettingsPage from './pages/SettingsPage'
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
 
   if (loading) {
     return (
@@ -30,12 +30,39 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />
   }
 
+  if (!profile || !profile.location?.trim()) {
+    return <Navigate to="/profile-setup" replace />
+  }
+
   return (
     <>
       <SideNav />
       <main>{children}</main>
     </>
   )
+}
+
+function OnboardingLayout({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)' }}>
+        <p style={{ color: 'var(--color-text-muted)' }}>Loading…</p>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  // Profile is "complete" when user has gone through profile-setup (has location)
+  if (profile?.location?.trim()) {
+    return <Navigate to="/" replace />
+  }
+
+  return <main>{children}</main>
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -54,9 +81,9 @@ export default function App() {
         <Route path="/forgot-password" element={<PublicRoute><div style={{ padding: 'var(--space-4)', textAlign: 'center' }}><h1>Forgot password</h1><p>Password reset will be available in Phase 2.</p></div></PublicRoute>} />
 
         <Route path="/profile-setup" element={
-          <ProtectedLayout>
+          <OnboardingLayout>
             <ProfileSetupPage />
-          </ProtectedLayout>
+          </OnboardingLayout>
         } />
 
         <Route path="/" element={<ProtectedLayout><HeroPage /></ProtectedLayout>} />

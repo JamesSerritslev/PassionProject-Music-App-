@@ -9,26 +9,33 @@ import './ProfileSetup.css'
 const GENRES = ['Rock', 'Indie', 'Jazz', 'Pop', 'Alternative', 'Funk', 'Electronic', 'Folk', 'Metal', 'Punk']
 const INSTRUMENTS = ['Guitar', 'Bass', 'Drums', 'Keys', 'Vocals', 'Percussion', 'Saxophone', 'Trumpet', 'Violin', 'Other']
 
+const STEPS = [
+  { id: 1, title: 'About you' },
+  { id: 2, title: 'Music preferences' },
+  { id: 3, title: 'Finish up' },
+]
+
 export default function ProfileSetupPage() {
   const { user, profile, setProfile, refreshProfile } = useAuth()
   const navigate = useNavigate()
   const { geocode, geocoding, geocodeError, clearError } = useLocationGeocode()
+  const [step, setStep] = useState(1)
+  const [role, setRole] = useState<UserRole>('musician')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [roleFromSignup] = useState<UserRole | null>(null)
   const [form, setForm] = useState({
-    display_name: profile?.display_name ?? '',
-    location: profile?.location ?? '',
-    latitude: profile?.latitude ?? null as number | null,
-    longitude: profile?.longitude ?? null as number | null,
-    bio: profile?.bio ?? '',
-    age: profile?.age ?? '',
-    genres: profile?.genres ?? [] as string[],
-    instruments: profile?.instruments ?? [] as string[],
-    seeking: profile?.seeking ?? [] as string[],
-    roles: profile?.roles ?? [] as string[],
-    influences: (profile?.influences ?? []).join(', '),
-    members: profile?.members ?? [] as { name: string; age?: number }[],
+    display_name: '',
+    location: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
+    bio: '',
+    age: '' as string | number,
+    genres: [] as string[],
+    instruments: [] as string[],
+    seeking: [] as string[],
+    roles: [] as string[],
+    influences: '',
+    members: [] as { name: string; age?: number }[],
   })
 
   useEffect(() => {
@@ -47,11 +54,26 @@ export default function ProfileSetupPage() {
         influences: (profile.influences ?? []).join(', '),
         members: profile.members ?? [],
       })
+      setRole(profile.role)
+    } else if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        const r = (session?.user?.user_metadata?.role as UserRole) ?? 'musician'
+        setRole(r)
+      })
     }
   }, [profile])
 
   function toggleArray(arr: string[], item: string) {
     return arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item]
+  }
+
+  function canProceedStep1() {
+    return form.display_name.trim().length > 0 && form.location.trim().length > 0
+  }
+
+  function canProceedStep2() {
+    if (!isMusician && !isBand) return true
+    return form.genres.length > 0 || form.instruments.length > 0 || form.seeking.length > 0
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -84,8 +106,6 @@ export default function ProfileSetupPage() {
           return
         }
       } else {
-        const { data: { session } } = await supabase.auth.getSession()
-        const role = (session?.user?.user_metadata?.role as UserRole) ?? 'musician'
         const { error: err } = await supabase.from('profiles').insert({ user_id: user.id, role, ...payload })
         if (err) {
           setError(err.message)
@@ -103,124 +123,170 @@ export default function ProfileSetupPage() {
 
   if (!user) return <Navigate to="/login" replace />
 
-  const role = profile?.role ?? roleFromSignup ?? 'musician'
   const isBand = role === 'band'
   const isMusician = role === 'musician'
 
   return (
     <div className="profile-setup-page">
       <div className="profile-setup-card">
-        <h1>Complete your profile</h1>
-        <p className="profile-setup-sub">You're signing up as a <strong>{role}</strong>. Add your details below.</p>
+        <div className="ps-progress">
+          {STEPS.map((s) => (
+            <div
+              key={s.id}
+              className={`ps-progress-step ${step >= s.id ? 'active' : ''} ${step === s.id ? 'current' : ''}`}
+            >
+              <span className="ps-progress-dot">{s.id}</span>
+              <span className="ps-progress-label">{s.title}</span>
+            </div>
+          ))}
+        </div>
 
-        <form onSubmit={handleSubmit} className="profile-setup-form">
+        <h1 className="ps-title">
+          {step === 1 && 'Tell us about yourself'}
+          {step === 2 && 'What’s your music style?'}
+          {step === 3 && 'Almost there'}
+        </h1>
+        <p className="profile-setup-sub">
+          {step === 1 && `You're signing up as a ${role}. Let's start with the basics.`}
+          {step === 2 && 'Select your genres, instruments, and what you’re looking for.'}
+          {step === 3 && 'Add influences and any final details.'}
+        </p>
+
+        <form onSubmit={step === 3 ? handleSubmit : (e) => { e.preventDefault(); setStep((s) => s + 1) }} className="profile-setup-form">
           {error && <p className="auth-error">{error}</p>}
-          <label className="ps-label">
-            Display name *
-            <input
-              type="text"
-              value={form.display_name}
-              onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
-              placeholder="Stage name or band name"
-              required
-              className="ps-input"
-            />
-          </label>
-          <label className="ps-label">
-            Location *
-            <input
-              type="text"
-              value={form.location}
-              onChange={(e) => {
-                clearError()
-                setForm((f) => ({ ...f, location: e.target.value, latitude: null, longitude: null }))
-              }}
-              onBlur={async () => {
-                if (form.location.trim()) {
-                  const coords = await geocode(form.location.trim())
-                  if (coords) setForm((f) => ({ ...f, latitude: coords.lat, longitude: coords.lng }))
-                }
-              }}
-              placeholder="City, State or full address"
-              required
-              className="ps-input"
-            />
-            {geocoding && <span className="ps-hint">Finding coordinates…</span>}
-            {geocodeError && <span className="ps-hint ps-hint-error">{geocodeError}</span>}
-          </label>
-          {isMusician && (
-            <label className="ps-label">
-              Age
-              <input
-                type="number"
-                min={13}
-                max={120}
-                value={form.age || ''}
-                onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))}
-                placeholder="Optional"
-                className="ps-input"
-              />
-            </label>
-          )}
-          <label className="ps-label">
-            Bio
-            <textarea
-              value={form.bio}
-              onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-              placeholder="Tell people about yourself"
-              rows={3}
-              className="ps-input ps-textarea"
-            />
-          </label>
-          {(isMusician || isBand) && (
+
+          {step === 1 && (
             <>
-              <div className="ps-label">
-                Genres
-                <div className="ps-chips">
-                  {GENRES.map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      className={`ps-chip ${form.genres.includes(g) ? 'active' : ''}`}
-                      onClick={() => setForm((f) => ({ ...f, genres: toggleArray(f.genres, g) }))}
-                    >
-                      {g}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <label className="ps-label">
+                Display name *
+                <input
+                  type="text"
+                  value={form.display_name}
+                  onChange={(e) => setForm((f) => ({ ...f, display_name: e.target.value }))}
+                  placeholder="Stage name or band name"
+                  required
+                  className="ps-input"
+                />
+              </label>
+              <label className="ps-label">
+                Location *
+                <input
+                  type="text"
+                  value={form.location}
+                  onChange={(e) => {
+                    clearError()
+                    setForm((f) => ({ ...f, location: e.target.value, latitude: null, longitude: null }))
+                  }}
+                  onBlur={async () => {
+                    if (form.location.trim()) {
+                      const coords = await geocode(form.location.trim())
+                      if (coords) setForm((f) => ({ ...f, latitude: coords.lat, longitude: coords.lng }))
+                    }
+                  }}
+                  placeholder="City, State or full address"
+                  required
+                  className="ps-input"
+                />
+                {geocoding && <span className="ps-hint">Finding coordinates…</span>}
+                {geocodeError && <span className="ps-hint ps-hint-error">{geocodeError}</span>}
+              </label>
               {isMusician && (
-                <div className="ps-label">
-                  Instruments
-                  <div className="ps-chips">
-                    {INSTRUMENTS.map((i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        className={`ps-chip ${form.instruments.includes(i) ? 'active' : ''}`}
-                        onClick={() => setForm((f) => ({ ...f, instruments: toggleArray(f.instruments, i) }))}
-                      >
-                        {i}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <label className="ps-label">
+                  Age
+                  <input
+                    type="number"
+                    min={13}
+                    max={120}
+                    value={form.age || ''}
+                    onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))}
+                    placeholder="Optional"
+                    className="ps-input"
+                  />
+                </label>
               )}
-              <div className="ps-label">
-                Seeking (what you're looking for)
-                <div className="ps-chips">
-                  {INSTRUMENTS.map((i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className={`ps-chip ${form.seeking.includes(i) ? 'active' : ''}`}
-                      onClick={() => setForm((f) => ({ ...f, seeking: toggleArray(f.seeking, i) }))}
-                    >
-                      {i}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              {(isMusician || isBand) ? (
+                <>
+                  <div className="ps-label">
+                    Genres
+                    <div className="ps-chips">
+                      {GENRES.map((g) => (
+                        <button
+                          key={g}
+                          type="button"
+                          className={`ps-chip ${form.genres.includes(g) ? 'active' : ''}`}
+                          onClick={() => setForm((f) => ({ ...f, genres: toggleArray(f.genres, g) }))}
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {isMusician && (
+                    <div className="ps-label">
+                      Instruments
+                      <div className="ps-chips">
+                        {INSTRUMENTS.map((i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            className={`ps-chip ${form.instruments.includes(i) ? 'active' : ''}`}
+                            onClick={() => setForm((f) => ({ ...f, instruments: toggleArray(f.instruments, i) }))}
+                          >
+                            {i}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="ps-label">
+                    Seeking (what you're looking for)
+                    <div className="ps-chips">
+                      {INSTRUMENTS.map((i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          className={`ps-chip ${form.seeking.includes(i) ? 'active' : ''}`}
+                          onClick={() => setForm((f) => ({ ...f, seeking: toggleArray(f.seeking, i) }))}
+                        >
+                          {i}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="ps-skip-msg">Venues can skip the music preferences step.</p>
+              )}
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <label className="ps-label">
+                Influences
+                <input
+                  type="text"
+                  value={form.influences}
+                  onChange={(e) => setForm((f) => ({ ...f, influences: e.target.value }))}
+                  placeholder="Artists or bands, comma separated"
+                  className="ps-input"
+                />
+              </label>
+              <label className="ps-label">
+                Bio
+                <textarea
+                  value={form.bio}
+                  onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
+                  placeholder="Tell people about yourself"
+                  rows={3}
+                  className="ps-input ps-textarea"
+                />
+              </label>
               {isMusician && (
                 <label className="ps-label">
                   Roles (e.g. lead vocalist, rhythm guitar)
@@ -254,21 +320,31 @@ export default function ProfileSetupPage() {
                   />
                 </label>
               )}
-              <label className="ps-label">
-                Influences
-                <input
-                  type="text"
-                  value={form.influences}
-                  onChange={(e) => setForm((f) => ({ ...f, influences: e.target.value }))}
-                  placeholder="Artists or bands, comma separated"
-                  className="ps-input"
-                />
-              </label>
             </>
           )}
-          <button type="submit" disabled={loading} className="ps-submit">
-            {loading ? 'Saving…' : 'Complete setup'}
-          </button>
+
+          <div className="ps-actions">
+            {step > 1 ? (
+              <button type="button" className="ps-back" onClick={() => setStep((s) => s - 1)}>
+                Back
+              </button>
+            ) : (
+              <span />
+            )}
+            {step < 3 ? (
+              <button
+                type="submit"
+                className="ps-next"
+                disabled={(step === 1 && !canProceedStep1()) || (step === 2 && !canProceedStep2())}
+              >
+                Next
+              </button>
+            ) : (
+              <button type="submit" disabled={loading} className="ps-submit">
+                {loading ? 'Saving…' : 'Complete setup'}
+              </button>
+            )}
+          </div>
         </form>
       </div>
     </div>
