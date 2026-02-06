@@ -33,6 +33,8 @@ export default function CreateEventPage() {
       name: form.name.trim(),
       description: form.description.trim() || null,
       location: form.location.trim() || null,
+      latitude: form.latitude,
+      longitude: form.longitude,
       event_date: form.event_date,
       event_time: form.event_time.trim() || null,
       price: form.price.trim() || null,
