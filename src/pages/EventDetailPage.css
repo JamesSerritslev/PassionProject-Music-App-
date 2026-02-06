@@ -1,6 +1,6 @@
 .event-detail-page {
   min-height: 100dvh;
-  padding-bottom: calc(var(--nav-height) + var(--space-8));
+  padding-bottom: var(--space-8);
 }
 
 .event-detail-back {

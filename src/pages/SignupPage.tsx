@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import type { UserRole } from '@/lib/supabase'
+import { PASSWORD_REQUIREMENTS, isPasswordStrong } from '@/lib/passwordStrength'
 import './Auth.css'
 
 const ROLES: { value: UserRole; label: string }[] = [
@@ -60,10 +61,17 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              minLength={6}
               autoComplete="new-password"
               className="auth-input"
             />
+            <ul className="auth-password-requirements">
+              {PASSWORD_REQUIREMENTS.map((req) => (
+                <li key={req.id} className={req.test(password) ? 'met' : ''}>
+                  <span className="auth-req-icon">{req.test(password) ? '✓' : '○'}</span>
+                  {req.label}
+                </li>
+              ))}
+            </ul>
           </label>
           <label className="auth-label">
             I am a
@@ -80,7 +88,7 @@ export default function SignupPage() {
               ))}
             </div>
           </label>
-          <button type="submit" disabled={loading} className="auth-submit">
+          <button type="submit" disabled={loading || !isPasswordStrong(password)} className="auth-submit">
             {loading ? 'Creating account…' : 'Sign up'}
           </button>
           <p className="auth-switch">

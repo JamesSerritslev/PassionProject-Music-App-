@@ -1,25 +1,29 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import './BottomNav.css'
 
 const navItems = [
-  { to: '/', label: 'Home', icon: '⌂' },
+  { to: '/', label: 'Musicians', icon: '👥' },
   { to: '/events', label: 'Events', icon: '📅' },
   { to: '/profile', label: 'Profile', icon: '👤' },
   { to: '/more', label: 'More', icon: '⋯' },
 ]
 
-export default function BottomNav() {
+export default function SideNav() {
   return (
-    <nav className="bottom-nav" role="navigation" aria-label="Main">
+    <nav className="side-nav" role="navigation" aria-label="Main">
+      <Link to="/" className="side-nav-brand" aria-label="BandScope Home">
+        <span className="side-nav-brand-bar" />
+        <span className="side-nav-brand-text">BandScope</span>
+      </Link>
       {navItems.map(({ to, label, icon }) => (
         <NavLink
           key={to}
           to={to}
-          className={({ isActive }) => `bottom-nav-link ${isActive ? 'active' : ''}`}
-          end={to === '/'}
+          className={({ isActive }) => `side-nav-link ${isActive ? 'active' : ''}`}
+          end={to === '/' || to === '/profile'}
         >
-          <span className="bottom-nav-icon" aria-hidden>{icon}</span>
-          <span className="bottom-nav-label">{label}</span>
+          <span className="side-nav-icon" aria-hidden>{icon}</span>
+          <span className="side-nav-label">{label}</span>
         </NavLink>
       ))}
     </nav>

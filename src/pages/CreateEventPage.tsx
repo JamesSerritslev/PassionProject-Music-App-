@@ -2,17 +2,22 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MOCK_EVENTS } from '@/data/mock'
 import type { EventRow } from '@/lib/supabase'
+import { useLocationGeocode } from '@/hooks/useLocationGeocode'
 import './CreateEventPage.css'
+import './ProfileSetup.css'
 
 // In MVP we append to mock list; later use Supabase
 let mockEvents = [...MOCK_EVENTS]
 
 export default function CreateEventPage() {
   const navigate = useNavigate()
+  const { geocode, geocoding, geocodeError, clearError } = useLocationGeocode()
   const [form, setForm] = useState({
     name: '',
     description: '',
     location: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
     event_date: '',
     event_time: '',
     price: '',
@@ -64,11 +69,22 @@ export default function CreateEventPage() {
             <input
               type="text"
               value={form.location}
-              onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+              onChange={(e) => {
+                clearError()
+                setForm((f) => ({ ...f, location: e.target.value, latitude: null, longitude: null }))
+              }}
+              onBlur={async () => {
+                if (form.location.trim()) {
+                  const coords = await geocode(form.location.trim())
+                  if (coords) setForm((f) => ({ ...f, latitude: coords.lat, longitude: coords.lng }))
+                }
+              }}
               placeholder="Venue name, address"
               required
               className="ce-input"
             />
+            {geocoding && <span className="ce-hint">Finding coordinates…</span>}
+            {geocodeError && <span className="ce-hint ce-hint-error">{geocodeError}</span>}
           </label>
           <label className="ce-label">
             Date *
