@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
-import type { Profile, UserRole } from '@/lib/supabase'
+import type { UserRole } from '@/lib/supabase'
 import { useLocationGeocode } from '@/hooks/useLocationGeocode'
 import './ProfileSetup.css'
 
@@ -12,9 +12,10 @@ const INSTRUMENTS = ['Guitar', 'Bass', 'Drums', 'Keys', 'Vocals', 'Percussion', 
 export default function ProfileSetupPage() {
   const { user, profile, setProfile, refreshProfile } = useAuth()
   const navigate = useNavigate()
+  const { geocode, geocoding, geocodeError, clearError } = useLocationGeocode()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [roleFromSignup, setRoleFromSignup] = useState<UserRole | null>(null)
+  const [roleFromSignup] = useState<UserRole | null>(null)
   const [form, setForm] = useState({
     display_name: profile?.display_name ?? '',
     location: profile?.location ?? '',
