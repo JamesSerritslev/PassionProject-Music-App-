@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
 import type { Profile } from '@/lib/supabase'
+import { useLocationGeocode } from '@/hooks/useLocationGeocode'
 import './ProfileSetup.css'
 
 const GENRES = ['Rock', 'Indie', 'Jazz', 'Pop', 'Alternative', 'Funk', 'Electronic', 'Folk', 'Metal', 'Punk']
@@ -13,10 +14,13 @@ export default function EditProfilePage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const { geocode, geocoding, geocodeError, clearError } = useLocationGeocode()
 
   const [form, setForm] = useState({
     display_name: profile?.display_name ?? '',
     location: profile?.location ?? '',
+    latitude: profile?.latitude ?? null as number | null,
+    longitude: profile?.longitude ?? null as number | null,
     bio: profile?.bio ?? '',
     age: profile?.age ?? '',
     genres: profile?.genres ?? [] as string[],
@@ -26,6 +30,25 @@ export default function EditProfilePage() {
     influences: (profile?.influences ?? []).join(', '),
     members: profile?.members ?? [] as { name: string; age?: number }[],
   })
+
+  useEffect(() => {
+    if (profile) {
+      setForm({
+        display_name: profile.display_name ?? '',
+        location: profile.location ?? '',
+        latitude: profile.latitude ?? null,
+        longitude: profile.longitude ?? null,
+        bio: profile.bio ?? '',
+        age: profile.age ?? '',
+        genres: profile.genres ?? [],
+        instruments: profile.instruments ?? [],
+        seeking: profile.seeking ?? [],
+        roles: profile.roles ?? [],
+        influences: (profile.influences ?? []).join(', '),
+        members: profile.members ?? [],
+      })
+    }
+  }, [profile])
 
   function toggleArray(arr: string[], item: string) {
     return arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item]
@@ -37,9 +60,20 @@ export default function EditProfilePage() {
     setError('')
     setLoading(true)
     try {
+      let lat = form.latitude
+      let lng = form.longitude
+      if (form.location.trim() && (lat === null || lng === null)) {
+        const coords = await geocode(form.location.trim())
+        if (coords) {
+          lat = coords.lat
+          lng = coords.lng
+        }
+      }
       const payload = {
         display_name: form.display_name.trim() || 'Anonymous',
         location: form.location.trim() || null,
+        latitude: lat,
+        longitude: lng,
         bio: form.bio.trim() || null,
         age: form.age ? Number(form.age) : null,
         genres: form.genres.length ? form.genres : [],
@@ -92,10 +126,22 @@ export default function EditProfilePage() {
             <input
               type="text"
               value={form.location}
-              onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+              onChange={(e) => {
+                clearError()
+                setForm((f) => ({ ...f, location: e.target.value, latitude: null, longitude: null }))
+              }}
+              onBlur={async () => {
+                if (form.location.trim()) {
+                  const coords = await geocode(form.location.trim())
+                  if (coords) setForm((f) => ({ ...f, latitude: coords.lat, longitude: coords.lng }))
+                }
+              }}
+              placeholder="City, State or full address"
               required
               className="ps-input"
             />
+            {geocoding && <span className="ps-hint">Finding coordinates…</span>}
+            {geocodeError && <span className="ps-hint ps-hint-error">{geocodeError}</span>}
           </label>
           {isMusician && (
             <label className="ps-label">

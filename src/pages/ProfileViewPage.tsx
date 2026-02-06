@@ -1,31 +1,31 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { MOCK_PROFILES, MOCK_FOLLOWING_IDS } from '@/data/mock'
+import { MOCK_FOLLOWING_IDS } from '@/data/mock'
+import { useProfiles } from '@/hooks/useProfiles'
 import './ProfileViewPage.css'
-
-const FEED_PROFILES = MOCK_PROFILES.filter((p) => p.role !== 'venue')
 
 export default function ProfileViewPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { profile: currentProfile } = useAuth()
+  const { profiles: feedProfiles, loading: profilesLoading } = useProfiles()
   const [following, setFollowing] = useState(MOCK_FOLLOWING_IDS.has(id ?? ''))
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
 
-  const profile = MOCK_PROFILES.find((p) => p.id === id) ?? null
+  const profile = feedProfiles.find((p) => p.id === id) ?? null
   const isOwn = currentProfile?.id === id
 
   const { prevProfile, nextProfile } = useMemo(() => {
-    const idx = FEED_PROFILES.findIndex((p) => p.id === id)
+    const idx = feedProfiles.findIndex((p) => p.id === id)
     if (idx < 0) return { prevProfile: null, nextProfile: null }
-    const len = FEED_PROFILES.length
+    const len = feedProfiles.length
     return {
-      prevProfile: FEED_PROFILES[(idx - 1 + len) % len],
-      nextProfile: FEED_PROFILES[(idx + 1) % len],
+      prevProfile: feedProfiles[(idx - 1 + len) % len],
+      nextProfile: feedProfiles[(idx + 1) % len],
     }
-  }, [id])
+  }, [feedProfiles, id])
 
   const allImages = profile
     ? [profile.avatar_url, ...(profile.gallery_urls ?? [])].filter((url): url is string => !!url)
@@ -73,6 +73,14 @@ export default function ProfileViewPage() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [lightboxOpen, prevProfile, nextProfile, navigate])
 
+  if (profilesLoading && !profile) {
+    return (
+      <div className="profile-view-page">
+        <p>Loading profile…</p>
+        <Link to="/">Back to feed</Link>
+      </div>
+    )
+  }
   if (!profile) {
     return (
       <div className="profile-view-page">
@@ -104,7 +112,7 @@ export default function ProfileViewPage() {
 
   return (
     <div className="profile-view-page">
-      {FEED_PROFILES.length > 1 && (
+      {feedProfiles.length > 1 && (
         <>
           {prevProfile && (
             <Link
@@ -284,6 +292,7 @@ export default function ProfileViewPage() {
             )}
           </section>
         </main>
+
       </div>
     </div>
   )

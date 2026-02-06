@@ -21,6 +21,8 @@ export interface Profile {
   avatar_url: string | null
   gallery_urls: string[] | null
   location: string | null
+  latitude: number | null
+  longitude: number | null
   bio: string | null
   links: string[] | null
   genres: string[] | null
@@ -41,6 +43,8 @@ export interface EventRow {
   name: string
   description: string | null
   location: string | null
+  latitude: number | null
+  longitude: number | null
   event_date: string
   event_time: string | null
   price: string | null

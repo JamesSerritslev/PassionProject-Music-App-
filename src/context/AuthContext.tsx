@@ -29,6 +29,8 @@ const MOCK_PROFILE: Profile = {
   avatar_url: null,
   gallery_urls: null,
   location: 'New York, NY',
+  latitude: null,
+  longitude: null,
   bio: 'Edit your profile to add a bio.',
   links: null,
   genres: ['Rock'],

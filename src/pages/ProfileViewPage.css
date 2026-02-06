@@ -145,6 +145,32 @@
   text-decoration: underline;
 }
 
+.profile-view-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.profile-view-filters-btn {
+  flex-shrink: 0;
+  min-height: var(--tap-min);
+  padding: 0 var(--space-4);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.profile-view-filters-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
 .profile-view-name {
   font-size: var(--text-2xl);
   font-weight: 700;

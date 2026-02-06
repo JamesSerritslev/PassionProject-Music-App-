@@ -3,6 +3,7 @@ import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
 import type { Profile, UserRole } from '@/lib/supabase'
+import { useLocationGeocode } from '@/hooks/useLocationGeocode'
 import './ProfileSetup.css'
 
 const GENRES = ['Rock', 'Indie', 'Jazz', 'Pop', 'Alternative', 'Funk', 'Electronic', 'Folk', 'Metal', 'Punk']
@@ -32,6 +33,8 @@ export default function ProfileSetupPage() {
       setForm({
         display_name: profile.display_name ?? '',
         location: profile.location ?? '',
+        latitude: profile.latitude ?? null,
+        longitude: profile.longitude ?? null,
         bio: profile.bio ?? '',
         age: profile.age ?? '',
         genres: profile.genres ?? [],
@@ -123,11 +126,22 @@ export default function ProfileSetupPage() {
             <input
               type="text"
               value={form.location}
-              onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-              placeholder="City, State or City, Country"
+              onChange={(e) => {
+                clearError()
+                setForm((f) => ({ ...f, location: e.target.value, latitude: null, longitude: null }))
+              }}
+              onBlur={async () => {
+                if (form.location.trim()) {
+                  const coords = await geocode(form.location.trim())
+                  if (coords) setForm((f) => ({ ...f, latitude: coords.lat, longitude: coords.lng }))
+                }
+              }}
+              placeholder="City, State or full address"
               required
               className="ps-input"
             />
+            {geocoding && <span className="ps-hint">Finding coordinates…</span>}
+            {geocodeError && <span className="ps-hint ps-hint-error">{geocodeError}</span>}
           </label>
           {isMusician && (
             <label className="ps-label">

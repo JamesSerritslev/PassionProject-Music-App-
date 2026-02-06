@@ -38,6 +38,16 @@
   color: var(--color-text-muted);
 }
 
+.ce-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+.ce-hint-error {
+  color: var(--color-error);
+}
+
 .ce-input {
   padding: var(--space-3) var(--space-4);
   background: var(--color-bg);
