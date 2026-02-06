@@ -31,16 +31,31 @@ export default function MyEventsPage() {
                         <span className="events-card-placeholder">📅</span>
                       )}
                     </div>
-                    <div className="events-card-body">
-                      <h2 className="events-card-name">{ev.name}</h2>
-                      {ev.location && <p className="events-card-location">{ev.location}</p>}
-                      <p className="events-card-date">
+                    <div className="events-card-name-banner">
+                      <h2 className="events-card-name">{ev.name.toUpperCase()}</h2>
+                    </div>
+                    <div className="events-card-details">
+                      {ev.location && (
+                        <p className="events-card-row">
+                          <span className="events-card-icon" aria-hidden>📍</span>
+                          {ev.location}
+                        </p>
+                      )}
+                      <p className="events-card-row">
+                        <span className="events-card-icon" aria-hidden>📅</span>
                         {new Date(ev.event_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                         {ev.event_time && ` · ${ev.event_time}`}
                       </p>
-                      {ev.price && <p className="events-card-price">{ev.price}</p>}
-                      <p className="events-card-attendees">{ev.attendee_count} attending</p>
-                      <span className="events-card-more">More info →</span>
+                      {ev.price && (
+                        <p className="events-card-row">
+                          <span className="events-card-icon" aria-hidden>💰</span>
+                          {ev.price}
+                        </p>
+                      )}
+                      <p className="events-card-row">
+                        <span className="events-card-icon" aria-hidden>👥</span>
+                        {ev.attendee_count} attending
+                      </p>
                     </div>
                   </article>
                 </Link>

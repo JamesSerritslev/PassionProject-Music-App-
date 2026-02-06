@@ -1,5 +1,6 @@
 -- BandScope MVP schema for Supabase
 -- Run in SQL Editor after creating your project
+-- For migrations, use supabase/migrations/ instead
 
 -- Enable UUID extension if needed
 -- create extension if not exists "uuid-ossp";
@@ -11,6 +12,7 @@ create table if not exists public.profiles (
   role text not null check (role in ('musician', 'band', 'venue')),
   display_name text not null,
   avatar_url text,
+  gallery_urls text[] default '{}',
   location text,
   bio text,
   links jsonb default '[]',
