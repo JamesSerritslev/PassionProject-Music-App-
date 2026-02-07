@@ -39,6 +39,7 @@ Open [http://localhost:5173](http://localhost:5173). Without Supabase configured
    - `VITE_SUPABASE_URL` – project URL
    - `VITE_SUPABASE_ANON_KEY` – anon/public key
 3. Run the SQL in `supabase/schema.sql` (create this from the spec) to create `profiles`, `events`, and `follows` tables.
+4. **Profile pictures**: Create an `avatars` bucket in Supabase Dashboard: **Storage** → **New bucket** → name: `avatars`, **Public bucket**: on. Or deploy the `ensure-avatars-bucket` Edge Function (`supabase functions deploy ensure-avatars-bucket`) so the app can create it automatically when needed.
 
 Without these env vars, the app uses mock data and mock auth so you can click through all flows.
 
