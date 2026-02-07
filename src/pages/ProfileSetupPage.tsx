@@ -13,6 +13,7 @@ const STEPS = [
   { id: 1, title: 'About you' },
   { id: 2, title: 'Music preferences' },
   { id: 3, title: 'Finish up' },
+  { id: 4, title: 'Profile picture' },
 ]
 
 export default function ProfileSetupPage() {
@@ -36,6 +37,8 @@ export default function ProfileSetupPage() {
     roles: [] as string[],
     influences: '',
     members: [] as { name: string; age?: number }[],
+    avatar_url: null as string | null,
+    avatar_file: null as File | null,
   })
 
   useEffect(() => {
@@ -53,6 +56,8 @@ export default function ProfileSetupPage() {
         roles: profile.roles ?? [],
         influences: (profile.influences ?? []).join(', '),
         members: profile.members ?? [],
+        avatar_url: profile.avatar_url ?? null,
+        avatar_file: null,
       })
       setRole(profile.role)
     } else if (supabase) {
@@ -81,6 +86,32 @@ export default function ProfileSetupPage() {
     if (!user) return
     setError('')
     setLoading(true)
+    let avatarUrl = form.avatar_url
+    if (supabase && form.avatar_file) {
+      const ext = form.avatar_file.name.split('.').pop() || 'jpg'
+      const path = `${user.id}/avatar.${ext}`
+      let { error: uploadErr } = await supabase.storage.from('avatars').upload(path, form.avatar_file, { upsert: true })
+      if (uploadErr) {
+        const msg = (uploadErr.message || '').toLowerCase()
+        const isBucketNotFound = msg.includes('bucket') || msg.includes('not found') || msg.includes('nosuchbucket') || msg.includes('404')
+        if (isBucketNotFound) {
+          await supabase.functions.invoke('ensure-avatars-bucket')
+          const retry = await supabase.storage.from('avatars').upload(path, form.avatar_file, { upsert: true })
+          uploadErr = retry.error
+        }
+      }
+      if (uploadErr) {
+        const isBucketProb = (uploadErr.message || '').toLowerCase().includes('bucket') ||
+          (uploadErr.message || '').toLowerCase().includes('not found')
+        setError(isBucketProb
+          ? 'Storage bucket not set up. Create an "avatars" bucket in Supabase Dashboard (Storage → New bucket, public: true), or deploy the ensure-avatars-bucket Edge Function.'
+          : uploadErr.message)
+        setLoading(false)
+        return
+      }
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
+      avatarUrl = urlData.publicUrl
+    }
     const displayName = form.display_name.trim() || 'Anonymous'
     const payload = {
       display_name: displayName,
@@ -95,6 +126,7 @@ export default function ProfileSetupPage() {
       roles: form.roles.length ? form.roles : [],
       influences: form.influences.trim() ? form.influences.split(',').map((s) => s.trim()).filter(Boolean) : [],
       members: form.members.length ? form.members : [],
+      avatar_url: avatarUrl,
       last_active_at: new Date().toISOString(),
     }
     if (supabase) {
@@ -150,9 +182,10 @@ export default function ProfileSetupPage() {
           {step === 1 && `You're signing up as a ${role}. Let's start with the basics.`}
           {step === 2 && 'Select your genres, instruments, and what you’re looking for.'}
           {step === 3 && 'Add influences and any final details.'}
+          {step === 4 && 'Users with profile pictures are 20x more than users without!'}
         </p>
 
-        <form onSubmit={step === 3 ? handleSubmit : (e) => { e.preventDefault(); setStep((s) => s + 1) }} className="profile-setup-form">
+        <form onSubmit={step === 4 ? handleSubmit : (e) => { e.preventDefault(); setStep((s) => s + 1) }} className="profile-setup-form">
           {error && <p className="auth-error">{error}</p>}
 
           {step === 1 && (
@@ -323,6 +356,48 @@ export default function ProfileSetupPage() {
             </>
           )}
 
+          {step === 4 && (
+            <>
+              <div className="ps-avatar-upload">
+                <div className="ps-avatar-preview">
+                  {(form.avatar_file || form.avatar_url) ? (
+                    <img
+                      src={form.avatar_file ? URL.createObjectURL(form.avatar_file) : form.avatar_url!}
+                      alt="Preview"
+                      className="ps-avatar-img"
+                    />
+                  ) : (
+                    <div className="ps-avatar-placeholder">
+                      <span className="ps-avatar-icon">📷</span>
+                      <span>No photo yet</span>
+                    </div>
+                  )}
+                </div>
+                <label className="ps-avatar-label">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) setForm((f) => ({ ...f, avatar_file: file, avatar_url: null }))
+                    }}
+                    className="ps-avatar-input"
+                  />
+                  {form.avatar_file || form.avatar_url ? 'Change photo' : 'Add photo (optional)'}
+                </label>
+                {(form.avatar_file || form.avatar_url) && (
+                  <button
+                    type="button"
+                    className="ps-avatar-remove"
+                    onClick={() => setForm((f) => ({ ...f, avatar_file: null, avatar_url: null }))}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
           <div className="ps-actions">
             {step > 1 ? (
               <button type="button" className="ps-back" onClick={() => setStep((s) => s - 1)}>
@@ -331,7 +406,7 @@ export default function ProfileSetupPage() {
             ) : (
               <span />
             )}
-            {step < 3 ? (
+            {step < 4 ? (
               <button
                 type="submit"
                 className="ps-next"
