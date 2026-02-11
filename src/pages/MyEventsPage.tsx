@@ -4,8 +4,6 @@ import './EventsPage.css'
 
 export default function MyEventsPage() {
   // In MVP show mock events; later filter by profile id / created_by
-  const myEvents = MOCK_EVENTS
-
   return (
     <div className="events-page">
       <header className="events-header">
@@ -16,11 +14,11 @@ export default function MyEventsPage() {
       </header>
 
       <section className="events-list">
-        {myEvents.length === 0 ? (
+        {MOCK_EVENTS.length === 0 ? (
           <p className="events-empty">You haven't created any events yet.</p>
         ) : (
           <ul className="events-card-list">
-            {myEvents.map((ev) => (
+            {MOCK_EVENTS.map((ev) => (
               <li key={ev.id}>
                 <Link to={`/events/${ev.id}`} className="events-card-link">
                   <article className="events-card">

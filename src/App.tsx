@@ -41,8 +41,10 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />
   }
 
-  if (!profile || !profile.location?.trim()) {
-    if (!profileCheckDone) {
+  const profileIncomplete = !profile || !profile.location?.trim()
+  if (profileIncomplete) {
+    // Only wait when profile is still null (give fetch time); if profile exists but no location, redirect immediately
+    if (profile === null && !profileCheckDone) {
       return (
         <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)' }}>
           <p style={{ color: 'var(--color-text-muted)' }}>Loading…</p>

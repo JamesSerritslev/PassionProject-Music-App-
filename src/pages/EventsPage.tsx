@@ -3,8 +3,6 @@ import { MOCK_EVENTS } from '@/data/mock'
 import './EventsPage.css'
 
 export default function EventsPage() {
-  const events = MOCK_EVENTS
-
   return (
     <div className="events-page">
       <header className="events-header">
@@ -13,11 +11,11 @@ export default function EventsPage() {
       </header>
 
       <section className="events-list">
-        {events.length === 0 ? (
+        {MOCK_EVENTS.length === 0 ? (
           <p className="events-empty">No upcoming events. Check back later.</p>
         ) : (
           <ul className="events-card-list">
-            {events.map((ev) => (
+            {MOCK_EVENTS.map((ev) => (
               <li key={ev.id}>
                 <Link to={`/events/${ev.id}`} className="events-card-link">
                   <article className="events-card">

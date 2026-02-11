@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfileState] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const signedOutRef = useRef(false)
+  const initialSessionCheckedRef = useRef(false)
 
   const fetchProfile = useCallback(async (userId: string, retries = 3): Promise<Profile | null> => {
     if (!supabase) return MOCK_PROFILE
@@ -92,14 +93,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const p = await fetchProfile(session.user.id)
         if (ignore) return
         setProfileState(p)
+        if (!ignore) setLoading(false)
       } else {
         signedOutRef.current = false
         setUser(null)
         setProfileState(null)
+        // Avoid flashing to login when onAuthStateChange fires with null before getSession resolves
+        if (initialSessionCheckedRef.current && !ignore) setLoading(false)
       }
-      if (!ignore) setLoading(false)
     }
-    supabase.auth.getSession().then(({ data: { session } }) => applySession(session))
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      applySession(session).then(() => {
+        initialSessionCheckedRef.current = true
+        setLoading(false)
+      })
+    })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       applySession(session)
     })

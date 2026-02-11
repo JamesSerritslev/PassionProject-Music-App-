@@ -1,13 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MOCK_EVENTS } from '@/data/mock'
-import type { EventRow } from '@/lib/supabase'
 import { useLocationGeocode } from '@/hooks/useLocationGeocode'
 import './CreateEventPage.css'
 import './ProfileSetup.css'
-
-// In MVP we append to mock list; later use Supabase
-let mockEvents = [...MOCK_EVENTS]
 
 export default function CreateEventPage() {
   const navigate = useNavigate()
@@ -27,23 +22,7 @@ export default function CreateEventPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    const newEvent: EventRow = {
-      id: `e${Date.now()}`,
-      created_by: 'current-user',
-      name: form.name.trim(),
-      description: form.description.trim() || null,
-      location: form.location.trim() || null,
-      latitude: form.latitude,
-      longitude: form.longitude,
-      event_date: form.event_date,
-      event_time: form.event_time.trim() || null,
-      price: form.price.trim() || null,
-      image_url: null,
-      attendee_count: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-    mockEvents = [...mockEvents, newEvent]
+    // In MVP event is not persisted; use Supabase when ready and build EventRow payload here
     setLoading(false)
     navigate('/events', { replace: true })
   }

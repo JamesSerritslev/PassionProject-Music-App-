@@ -53,9 +53,3 @@ export interface EventRow {
   created_at: string
   updated_at: string
 }
-
-export interface FollowRow {
-  follower_id: string
-  following_id: string
-  created_at: string
-}
