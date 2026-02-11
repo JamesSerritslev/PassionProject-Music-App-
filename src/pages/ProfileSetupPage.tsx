@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { supabase } from '@/lib/supabase'
-import type { UserRole } from '@/lib/supabase'
+import { supabase, type Profile, type UserRole } from '@/lib/supabase'
 import { useLocationGeocode } from '@/hooks/useLocationGeocode'
 import './ProfileSetup.css'
 
@@ -84,6 +83,11 @@ export default function ProfileSetupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!user) return
+    const locationTrimmed = form.location?.trim()
+    if (!locationTrimmed) {
+      setError('Location is required.')
+      return
+    }
     setError('')
     setLoading(true)
     let avatarUrl = form.avatar_url
@@ -115,7 +119,7 @@ export default function ProfileSetupPage() {
     const displayName = form.display_name.trim() || 'Anonymous'
     const payload = {
       display_name: displayName,
-      location: form.location.trim() || null,
+      location: locationTrimmed,
       latitude: form.latitude ?? null,
       longitude: form.longitude ?? null,
       bio: form.bio.trim() || null,
@@ -130,22 +134,35 @@ export default function ProfileSetupPage() {
       last_active_at: new Date().toISOString(),
     }
     if (supabase) {
+      let savedProfile: Profile | null = null
       if (profile) {
-        const { error: err } = await supabase.from('profiles').update(payload).eq('id', profile.id)
+        const { data, error: err } = await supabase
+          .from('profiles')
+          .update(payload)
+          .eq('id', profile.id)
+          .select()
+          .single()
         if (err) {
           setError(err.message)
           setLoading(false)
           return
         }
+        savedProfile = data as Profile
       } else {
-        const { error: err } = await supabase.from('profiles').insert({ user_id: user.id, role, ...payload })
+        const { data, error: err } = await supabase
+          .from('profiles')
+          .insert({ user_id: user.id, role, ...payload })
+          .select()
+          .single()
         if (err) {
           setError(err.message)
           setLoading(false)
           return
         }
+        savedProfile = data as Profile
       }
-      await refreshProfile()
+      if (savedProfile) setProfile(savedProfile)
+      else await refreshProfile()
     } else if (profile) {
       setProfile({ ...profile, ...payload, updated_at: new Date().toISOString() })
     }

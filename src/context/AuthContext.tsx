@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Profile, UserRole } from '@/lib/supabase'
@@ -51,6 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [profile, setProfileState] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const signedOutRef = useRef(false)
+  const initialSessionCheckedRef = useRef(false)
 
   const fetchProfile = useCallback(async (userId: string, retries = 3): Promise<Profile | null> => {
     if (!supabase) return MOCK_PROFILE
@@ -81,30 +83,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
       return
     }
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let ignore = false
+    const applySession = async (session: { user: { id: string; email?: string | null } } | null) => {
+      if (ignore) return
+      if (signedOutRef.current && session?.user) return
       if (session?.user) {
+        signedOutRef.current = false
         setUser({ id: session.user.id, email: session.user.email ?? '' })
-        setLoading(false)
-        fetchProfile(session.user.id).then((p) => setProfileState(p))
+        const p = await fetchProfile(session.user.id)
+        if (ignore) return
+        setProfileState(p)
+        if (!ignore) setLoading(false)
       } else {
+        signedOutRef.current = false
         setUser(null)
         setProfileState(null)
-        setLoading(false)
+        // Avoid flashing to login when onAuthStateChange fires with null before getSession resolves
+        if (initialSessionCheckedRef.current && !ignore) setLoading(false)
       }
+    }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      applySession(session).then(() => {
+        initialSessionCheckedRef.current = true
+        setLoading(false)
+      })
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser({ id: session.user.id, email: session.user.email ?? '' })
-        setLoading(false)
-        fetchProfile(session.user.id).then((p) => setProfileState(p))
-      } else {
-        setUser(null)
-        setProfileState(null)
-        setLoading(false)
-      }
+      applySession(session)
     })
     const fallback = setTimeout(() => setLoading(false), 5000)
     return () => {
+      ignore = true
       clearTimeout(fallback)
       subscription.unsubscribe()
     }
@@ -150,9 +159,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchProfile])
 
   const signOut = useCallback(async () => {
-    if (supabase) await supabase.auth.signOut()
+    signedOutRef.current = true
     setUser(null)
     setProfileState(null)
+    if (supabase) await supabase.auth.signOut()
   }, [])
 
   const deleteProfile = useCallback(async (): Promise<{ error: string | null }> => {

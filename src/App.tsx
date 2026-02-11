@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import SideNav from '@/components/BottomNav'
@@ -17,6 +18,16 @@ import SettingsPage from './pages/SettingsPage'
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth()
+  const [profileCheckDone, setProfileCheckDone] = useState(false)
+
+  useEffect(() => {
+    if (!user || profile !== null) {
+      setProfileCheckDone(false)
+      return
+    }
+    const t = setTimeout(() => setProfileCheckDone(true), 400)
+    return () => clearTimeout(t)
+  }, [user, profile])
 
   if (loading) {
     return (
@@ -30,7 +41,16 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />
   }
 
-  if (!profile || !profile.location?.trim()) {
+  const profileIncomplete = !profile || !profile.location?.trim()
+  if (profileIncomplete) {
+    // Only wait when profile is still null (give fetch time); if profile exists but no location, redirect immediately
+    if (profile === null && !profileCheckDone) {
+      return (
+        <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)' }}>
+          <p style={{ color: 'var(--color-text-muted)' }}>Loading…</p>
+        </div>
+      )
+    }
     return <Navigate to="/profile-setup" replace />
   }
 
