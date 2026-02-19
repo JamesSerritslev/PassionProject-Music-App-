@@ -5,8 +5,31 @@ import { supabase, type Profile, type UserRole } from '@/lib/supabase'
 import { useLocationGeocode } from '@/hooks/useLocationGeocode'
 import './ProfileSetup.css'
 
-const GENRES = ['Rock', 'Indie', 'Jazz', 'Pop', 'Alternative', 'Funk', 'Electronic', 'Folk', 'Metal', 'Punk']
-const INSTRUMENTS = ['Guitar', 'Bass', 'Drums', 'Keys', 'Vocals', 'Percussion', 'Saxophone', 'Trumpet', 'Violin', 'Other']
+const GENRES = [
+  'Acoustic', 'Alternative', 'Americana', 'Bluegrass', 'Blues', 'Calypso', 'Celtic',
+  'Christian / Gospel', 'Christian Contemporary', 'Classic Rock', 'Classical', 'Country',
+  'Cover/Tribute', 'Dubstep', 'Electronic', 'Folk', 'Funk', 'Hip Hop/Rap', 'Jazz', 'Latin',
+  'Lounge', 'Metal', 'Pop', 'Progressive', 'Punk', 'R&B', 'Reggae', 'Rock', 'Ska',
+  'Southern Rock', 'World', 'Other',
+]
+const INSTRUMENTS = [
+  'Vocalist', 'Lead Guitar', 'Rhythm Guitar', 'Acoustic Guitar', 'Bass Guitar', 'Drums',
+  'Keyboard', 'Piano', 'DJ', 'Electronic Music', 'Background Singer',
+  'Vocalist - Tenor', 'Vocalist - Baritone', 'Vocalist - Alto', 'Vocalist - Soprano', 'Vocalist - Bass',
+  'Saxophone', 'Trumpet', 'Violin', 'Fiddle', 'Cello', 'Flute', 'Harmonica',
+  'Banjo', 'Mandolin', 'Ukulele', 'Upright bass', 'Dobro', 'Steel guitar',
+  'Trombone', 'Clarinet', 'Harp', 'Accordion', 'Bagpipes',
+  'Other Percussion', 'Other',
+]
+const SEEKING = [
+  'Vocalist', 'Lead Guitar', 'Rhythm Guitar', 'Acoustic Guitar', 'Bass Guitar', 'Drums',
+  'Keyboard', 'Piano', 'DJ', 'Electronic Music', 'Background Singer',
+  'Vocalist - Tenor', 'Vocalist - Baritone', 'Vocalist - Alto', 'Vocalist - Soprano', 'Vocalist - Bass',
+  'Saxophone', 'Trumpet', 'Violin', 'Fiddle', 'Cello', 'Flute', 'Harmonica',
+  'Banjo', 'Mandolin', 'Ukulele', 'Upright bass', 'Dobro', 'Steel guitar',
+  'Trombone', 'Clarinet', 'Harp', 'Accordion', 'Bagpipes',
+  'Other Percussion', 'Any', 'Other',
+]
 
 const STEPS = [
   { id: 1, title: 'About you' },
@@ -23,6 +46,9 @@ export default function ProfileSetupPage() {
   const [role, setRole] = useState<UserRole>('musician')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showAllGenres, setShowAllGenres] = useState(false)
+  const [showAllInstruments, setShowAllInstruments] = useState(false)
+  const [showAllSeeking, setShowAllSeeking] = useState(false)
   const [form, setForm] = useState({
     display_name: '',
     location: '',
@@ -263,7 +289,7 @@ export default function ProfileSetupPage() {
                 <>
                   <div className="ps-label">
                     Genres
-                    <div className="ps-chips">
+                    <div className={`ps-chips ${showAllGenres ? '' : 'ps-chips-collapsed'}`}>
                       {GENRES.map((g) => (
                         <button
                           key={g}
@@ -275,11 +301,16 @@ export default function ProfileSetupPage() {
                         </button>
                       ))}
                     </div>
+                    {GENRES.length > 12 && (
+                      <button type="button" className="ps-show-more" onClick={() => setShowAllGenres((v) => !v)}>
+                        {showAllGenres ? 'Show less' : `Show more (${GENRES.length - 12})`}
+                      </button>
+                    )}
                   </div>
                   {isMusician && (
                     <div className="ps-label">
                       Instruments
-                      <div className="ps-chips">
+                      <div className={`ps-chips ${showAllInstruments ? '' : 'ps-chips-collapsed'}`}>
                         {INSTRUMENTS.map((i) => (
                           <button
                             key={i}
@@ -291,12 +322,17 @@ export default function ProfileSetupPage() {
                           </button>
                         ))}
                       </div>
+                      {INSTRUMENTS.length > 12 && (
+                        <button type="button" className="ps-show-more" onClick={() => setShowAllInstruments((v) => !v)}>
+                          {showAllInstruments ? 'Show less' : `Show more (${INSTRUMENTS.length - 12})`}
+                        </button>
+                      )}
                     </div>
                   )}
                   <div className="ps-label">
                     Seeking (what you're looking for)
-                    <div className="ps-chips">
-                      {INSTRUMENTS.map((i) => (
+                    <div className={`ps-chips ${showAllSeeking ? '' : 'ps-chips-collapsed'}`}>
+                      {SEEKING.map((i) => (
                         <button
                           key={i}
                           type="button"
@@ -307,6 +343,11 @@ export default function ProfileSetupPage() {
                         </button>
                       ))}
                     </div>
+                    {SEEKING.length > 12 && (
+                      <button type="button" className="ps-show-more" onClick={() => setShowAllSeeking((v) => !v)}>
+                        {showAllSeeking ? 'Show less' : `Show more (${SEEKING.length - 12})`}
+                      </button>
+                    )}
                   </div>
                 </>
               ) : (

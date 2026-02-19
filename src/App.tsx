@@ -16,7 +16,17 @@ import MyEventsPage from '@/pages/MyEventsPage'
 import MorePage from '@/pages/MorePage'
 import SettingsPage from './pages/SettingsPage'
 
-function ProtectedLayout({ children }: { children: React.ReactNode }) {
+function AppLayout({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth()
+  return (
+    <>
+      <SideNav />
+      <main className={!user ? 'has-auth-bar' : ''}>{children}</main>
+    </>
+  )
+}
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth()
   const [profileCheckDone, setProfileCheckDone] = useState(false)
 
@@ -38,12 +48,11 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/" replace />
   }
 
   const profileIncomplete = !profile || !profile.location?.trim()
   if (profileIncomplete) {
-    // Only wait when profile is still null (give fetch time); if profile exists but no location, redirect immediately
     if (profile === null && !profileCheckDone) {
       return (
         <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)' }}>
@@ -54,12 +63,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
     return <Navigate to="/profile-setup" replace />
   }
 
-  return (
-    <>
-      <SideNav />
-      <main>{children}</main>
-    </>
-  )
+  return <>{children}</>
 }
 
 function OnboardingLayout({ children }: { children: React.ReactNode }) {
@@ -77,7 +81,6 @@ function OnboardingLayout({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />
   }
 
-  // Profile is "complete" when user has gone through profile-setup (has location)
   if (profile?.location?.trim()) {
     return <Navigate to="/" replace />
   }
@@ -85,7 +88,7 @@ function OnboardingLayout({ children }: { children: React.ReactNode }) {
   return <main>{children}</main>
 }
 
-function PublicRoute({ children }: { children: React.ReactNode }) {
+function AuthRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   if (loading) return <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading…</div>
   if (user) return <Navigate to="/" replace />
@@ -96,9 +99,9 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-        <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
-        <Route path="/forgot-password" element={<PublicRoute><div style={{ padding: 'var(--space-4)', textAlign: 'center' }}><h1>Forgot password</h1><p>Password reset will be available in Phase 2.</p></div></PublicRoute>} />
+        <Route path="/login" element={<AuthRoute><LoginPage /></AuthRoute>} />
+        <Route path="/signup" element={<AuthRoute><SignupPage /></AuthRoute>} />
+        <Route path="/forgot-password" element={<AuthRoute><div style={{ padding: 'var(--space-4)', textAlign: 'center' }}><h1>Forgot password</h1><p>Password reset will be available in Phase 2.</p></div></AuthRoute>} />
 
         <Route path="/profile-setup" element={
           <OnboardingLayout>
@@ -106,19 +109,20 @@ export default function App() {
           </OnboardingLayout>
         } />
 
-        <Route path="/" element={<ProtectedLayout><HeroPage /></ProtectedLayout>} />
-        <Route path="/profile" element={<ProtectedLayout><ProfilePage /></ProtectedLayout>} />
-        <Route path="/profile/edit" element={<ProtectedLayout><EditProfilePage /></ProtectedLayout>} />
-        <Route path="/profile/events" element={<ProtectedLayout><MyEventsPage /></ProtectedLayout>} />
-        <Route path="/profile/events/new" element={<ProtectedLayout><CreateEventPage /></ProtectedLayout>} />
-        <Route path="/profile/:id" element={<ProtectedLayout><ProfileViewPage /></ProtectedLayout>} />
+        {/* Public browse routes — anyone can see these */}
+        <Route path="/" element={<AppLayout><HeroPage /></AppLayout>} />
+        <Route path="/events" element={<AppLayout><EventsPage /></AppLayout>} />
+        <Route path="/events/:id" element={<AppLayout><EventDetailPage /></AppLayout>} />
+        <Route path="/profile/:id" element={<AppLayout><ProfileViewPage /></AppLayout>} />
 
-        <Route path="/events" element={<ProtectedLayout><EventsPage /></ProtectedLayout>} />
-        <Route path="/events/:id" element={<ProtectedLayout><EventDetailPage /></ProtectedLayout>} />
-        <Route path="/events/new" element={<ProtectedLayout><CreateEventPage /></ProtectedLayout>} />
-
-        <Route path="/more" element={<ProtectedLayout><MorePage /></ProtectedLayout>} />
-        <Route path="/settings" element={<ProtectedLayout><SettingsPage /></ProtectedLayout>} />
+        {/* Protected routes — must be logged in with complete profile */}
+        <Route path="/profile" element={<AppLayout><ProtectedRoute><ProfilePage /></ProtectedRoute></AppLayout>} />
+        <Route path="/profile/edit" element={<AppLayout><ProtectedRoute><EditProfilePage /></ProtectedRoute></AppLayout>} />
+        <Route path="/profile/events" element={<AppLayout><ProtectedRoute><MyEventsPage /></ProtectedRoute></AppLayout>} />
+        <Route path="/profile/events/new" element={<AppLayout><ProtectedRoute><CreateEventPage /></ProtectedRoute></AppLayout>} />
+        <Route path="/events/new" element={<AppLayout><ProtectedRoute><CreateEventPage /></ProtectedRoute></AppLayout>} />
+        <Route path="/more" element={<AppLayout><ProtectedRoute><MorePage /></ProtectedRoute></AppLayout>} />
+        <Route path="/settings" element={<AppLayout><ProtectedRoute><SettingsPage /></ProtectedRoute></AppLayout>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

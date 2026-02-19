@@ -8,7 +8,7 @@ export default function MorePage() {
 
   async function handleLogout() {
     await signOut()
-    navigate('/login', { replace: true })
+    navigate('/', { replace: true })
   }
 
   return (

@@ -7,8 +7,8 @@ interface ProfileCardProps {
 }
 
 export default function ProfileCard({ profile }: ProfileCardProps) {
-  const instruments = profile.instruments?.join(', ') ?? '—'
-  const genres = profile.genres?.join(', ') ?? '—'
+  const instruments = profile.instruments?.length ? profile.instruments.join(', ') : null
+  const seeking = profile.seeking?.length ? profile.seeking.join(', ') : null
 
   return (
     <article className="profile-card">
@@ -22,9 +22,9 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
       <div className="profile-card-body">
         <h2 className="profile-card-name">{profile.display_name}</h2>
         <ul className="profile-card-details">
-          <li>{instruments}</li>
           {profile.location && <li>{profile.location}</li>}
-          {genres !== '—' && <li>{genres}</li>}
+          {instruments && <li><strong>Plays</strong> {instruments}</li>}
+          {seeking && <li><strong>Seeking</strong> {seeking}</li>}
         </ul>
       </div>
     </article>
