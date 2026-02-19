@@ -98,3 +98,7 @@ img {
   height: auto;
   display: block;
 }
+
+main.has-auth-bar {
+  padding-top: 56px;
+}

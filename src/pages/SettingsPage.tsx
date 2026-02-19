@@ -20,7 +20,7 @@ export default function SettingsPage() {
       return
     }
     setConfirmOpen(false)
-    navigate('/login', { replace: true })
+    navigate('/', { replace: true })
   }
 
   return (

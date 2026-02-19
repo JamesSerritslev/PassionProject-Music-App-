@@ -154,6 +154,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser({ id: data.user.id, email: data.user.email ?? '' })
       const p = await fetchProfile(data.user.id)
       setProfileState(p)
+      // Fire-and-forget: notify feedback email about new signup
+      supabase.functions.invoke('notify-signup', {
+        body: { email, role, user_id: data.user.id },
+      }).then(
+        async (res) => {
+          if (res.error) {
+            const context = (res.error as any).context
+            const body = context?.body ? await new Response(context.body).text() : null
+            console.warn('[notify-signup] error:', res.error.message, body)
+          } else {
+            console.log('[notify-signup] success:', res.data)
+          }
+        },
+        (err) => console.warn('[notify-signup] failed:', err)
+      )
     }
     return { error: null }
   }, [fetchProfile])
