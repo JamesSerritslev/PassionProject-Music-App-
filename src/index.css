@@ -66,7 +66,14 @@ body {
 
 @media (max-width: 768px) {
   #root {
-    padding-left: 72px;
+    padding-left: 0;
+    padding-top: var(--nav-height);
+  }
+}
+
+@media (max-width: 360px) {
+  #root {
+    padding-top: 88px;
   }
 }
 
@@ -99,6 +106,8 @@ img {
   display: block;
 }
 
-main.has-auth-bar {
-  padding-top: 56px;
+@media (max-width: 480px) {
+  main.has-auth-bar {
+    padding-top: 44px;
+  }
 }

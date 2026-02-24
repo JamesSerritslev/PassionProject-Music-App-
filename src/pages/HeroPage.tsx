@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import ProfileCard from '@/components/ProfileCard'
+import { useAuth } from '@/context/AuthContext'
 import { useProfiles } from '@/hooks/useProfiles'
 import { useLocationGeocode } from '@/hooks/useLocationGeocode'
 import { distanceMiles } from '@/lib/geocoding'
@@ -9,6 +10,7 @@ import './HeroPage.css'
 const RADIUS_OPTIONS = [10, 25, 50, 100, 250]
 
 export default function HeroPage() {
+  const { user } = useAuth()
   const { profiles: allProfiles, loading: profilesLoading } = useProfiles()
   const [search, setSearch] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -68,6 +70,7 @@ export default function HeroPage() {
   return (
     <div className="hero-page">
       <header className="hero-header">
+      <h1 className="hero-heading">Discover musicians and bands</h1>
         <div className="hero-header-top">
           <div className="hero-search-wrap">
             <span className="hero-search-icon" aria-hidden>🔍</span>
@@ -88,8 +91,14 @@ export default function HeroPage() {
           >
             Filters
           </button>
+          {!user && (
+            <div className="hero-auth-inline">
+              <Link to="/signup" className="top-auth-btn top-auth-signup">Sign Up!</Link>
+              <Link to="/login" className="top-auth-btn top-auth-login">Login</Link>
+            </div>
+          )}
         </div>
-        <h1 className="hero-heading">Discover musicians and bands</h1>
+        
       </header>
 
       <section className="hero-feed">

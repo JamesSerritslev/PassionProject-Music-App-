@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Profile } from '@/lib/supabase'
 import { supabase } from '@/lib/supabase'
-import { MOCK_PROFILES } from '@/data/mock'
 
 function normalizeProfile(row: Record<string, unknown>): Profile {
   return {
@@ -31,20 +30,14 @@ function normalizeProfile(row: Record<string, unknown>): Profile {
   }
 }
 
-/**
- * Fetches profiles from Supabase and merges with mock data for testing.
- * Excludes venues per spec. Real profiles appear first, then mock.
- */
 export function useProfiles() {
-  const [profiles, setProfiles] = useState<Profile[]>(() =>
-    MOCK_PROFILES.filter((p) => p.role !== 'venue')
-  )
+  const [profiles, setProfiles] = useState<Profile[]>([])
   const [loading, setLoading] = useState(!!supabase)
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     if (!supabase) {
-      setProfiles(MOCK_PROFILES.filter((p) => p.role !== 'venue'))
+      setProfiles([])
       setLoading(false)
       return
     }
@@ -57,15 +50,13 @@ export function useProfiles() {
         .neq('role', 'venue')
       if (err) {
         setError(err.message)
-        setProfiles(MOCK_PROFILES.filter((p) => p.role !== 'venue'))
+        setProfiles([])
         return
       }
-      const real = (data ?? []).map((row) => normalizeProfile(row as Record<string, unknown>))
-      const mock = MOCK_PROFILES.filter((p) => p.role !== 'venue')
-      setProfiles([...real, ...mock])
+      setProfiles((data ?? []).map((row) => normalizeProfile(row as Record<string, unknown>)))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load profiles')
-      setProfiles(MOCK_PROFILES.filter((p) => p.role !== 'venue'))
+      setProfiles([])
     } finally {
       setLoading(false)
     }

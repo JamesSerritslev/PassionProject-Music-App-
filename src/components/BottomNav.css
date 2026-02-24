@@ -1,3 +1,4 @@
+/* ── Desktop: vertical sidebar ── */
 .side-nav {
   position: fixed;
   top: 0;
@@ -25,8 +26,6 @@
   font-weight: 700;
   position: relative;
 }
-
-
 
 .side-nav-brand::after,
 .side-nav-brand::before {
@@ -63,22 +62,24 @@
   border-radius: 2px;
 }
 
+/* ── Auth buttons (top right) ── */
 .top-auth-bar {
-  position: fixed;
-  top: 0;
-  left: var(--nav-width);
-  right: 0;
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  z-index: 200;
-  background: var(--color-bg);
+  display: none;
 }
 
 @media (max-width: 768px) {
   .top-auth-bar {
-    left: 72px;
+    position: fixed;
+    top: 0;
+    left: auto;
+    right: 0;
+    display: flex;
+    height: var(--nav-height);
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-3);
+    z-index: 200;
+    background: transparent;
   }
 }
 
@@ -113,6 +114,7 @@
   text-decoration: none;
 }
 
+/* ── Nav links ── */
 .side-nav-link {
   display: flex;
   align-items: center;
@@ -157,29 +159,117 @@
   font-size: var(--text-sm);
 }
 
+/* ── Mobile: horizontal top bar ── */
 @media (max-width: 768px) {
   .side-nav {
-    width: 72px;
-    padding: var(--space-2) 0;
-  }
-
-  .side-nav-brand-text {
-    display: none;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    width: 100%;
+    height: var(--nav-height);
+    flex-direction: row;
+    align-items: center;
+    padding: 0 var(--space-4);
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
   }
 
   .side-nav-brand {
-    justify-content: center;
-    padding: var(--space-2);
+    margin-bottom: 0;
+    margin-right: auto;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .side-nav-brand-bar {
+    width: 3px;
+    height: 16px;
+  }
+
+  .side-nav-brand-text {
+    font-size: var(--text-base);
+  }
+
+  .side-nav-brand::after,
+  .side-nav-brand::before {
+    display: none;
   }
 
   .side-nav-link {
+    flex: 1;
     flex-direction: column;
+    justify-content: center;
+    align-items: center;
     gap: 2px;
-    padding: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    margin: 0;
+    min-width: 0;
+  }
+
+  .side-nav-link.active::before {
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 3px;
+    border-radius: 2px 2px 0 0;
   }
 
   .side-nav-label {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
   }
 
+  .side-nav-icon {
+    font-size: 1.1rem;
+  }
+
+  .top-auth-btn {
+    padding: var(--space-1) var(--space-3);
+    font-size: 0.75rem;
+  }
+}
+
+/* Small phones: auth buttons drop below nav */
+@media (max-width: 480px) {
+  .top-auth-bar {
+    position: fixed;
+    top: var(--nav-height);
+    left: 0;
+    right: 0;
+    height: auto;
+    justify-content: center;
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-sidebar);
+    border-bottom: 1px solid var(--color-border);
+    z-index: 200;
+  }
+
+  .top-auth-btn {
+    padding: var(--space-1) var(--space-4);
+    font-size: var(--text-sm);
+  }
+}
+
+/* Very small phones: logo stacks above nav links */
+@media (max-width: 360px) {
+  .side-nav {
+    flex-wrap: wrap;
+    height: auto;
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .side-nav-brand {
+    width: 100%;
+    justify-content: center;
+    margin-right: 0;
+    padding: var(--space-1) 0;
+  }
+
+  .side-nav-link {
+    padding: var(--space-1);
+  }
+
+  .side-nav-label {
+    font-size: 0.55rem;
+  }
 }
