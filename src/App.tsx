@@ -27,7 +27,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth()
+  const { user, profile, loading, signOut } = useAuth()
   const [profileCheckDone, setProfileCheckDone] = useState(false)
 
   useEffect(() => {
@@ -38,6 +38,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     const t = setTimeout(() => setProfileCheckDone(true), 400)
     return () => clearTimeout(t)
   }, [user, profile])
+
+  useEffect(() => {
+    if (profileCheckDone && user && profile === null) {
+      signOut()
+    }
+  }, [profileCheckDone, user, profile, signOut])
 
   if (loading) {
     return (
@@ -59,6 +65,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
           <p style={{ color: 'var(--color-text-muted)' }}>Loading…</p>
         </div>
       )
+    }
+    if (profile === null) {
+      return <Navigate to="/" replace />
     }
     return <Navigate to="/profile-setup" replace />
   }
