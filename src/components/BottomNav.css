@@ -195,6 +195,10 @@
     display: none;
   }
 
+  .top-auth-bar + .side-nav {
+    padding-right: 165px;
+  }
+
   .side-nav-link {
     flex: 1;
     flex-direction: column;
@@ -231,6 +235,10 @@
 
 /* Small phones: auth buttons drop below nav */
 @media (max-width: 480px) {
+  .top-auth-bar + .side-nav {
+    padding-right: var(--space-4);
+  }
+
   .top-auth-bar {
     position: fixed;
     top: var(--nav-height);
@@ -266,10 +274,14 @@
   }
 
   .side-nav-link {
-    padding: var(--space-1);
+    padding: var(--space-2) var(--space-3);
   }
 
   .side-nav-label {
     font-size: 0.55rem;
+  }
+
+  .top-auth-bar {
+    top: 88px;
   }
 }

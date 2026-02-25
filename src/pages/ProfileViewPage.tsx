@@ -134,6 +134,10 @@ export default function ProfileViewPage() {
           )}
         </>
       )}
+      <Link to="/" className="profile-view-back">
+        ← Back
+      </Link>
+
       <div className="profile-view-layout">
         
         <aside className="profile-view-images">

@@ -1,7 +1,6 @@
 .profile-view-page {
   min-height: 100dvh;
-  padding: 5%;
-  padding-bottom: var(--space-8);
+  padding: var(--space-6) var(--space-6) var(--space-8);
   position: relative;
 }
 
@@ -45,21 +44,19 @@
 }
 
 @media (max-width: 768px) {
-  .profile-view-nav-prev {
-    left: calc(72px + var(--space-4));
+  .profile-view-nav {
+    display: none;
   }
 }
 
 .profile-view-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 360px) 1fr;
-  gap: var(--space-6);
-  max-width: 1000px;
+  grid-template-columns: minmax(280px, 420px) 1fr;
+  gap: var(--space-8);
+  max-width: 1300px;
   margin: 0 auto;
-  border-left: 2px solid rgba(255, 255, 255, 0.06);
-  border-right: 2px solid rgba(255, 255, 255, 0.06);
-  padding-left: 5%;
-  padding-right: 5%;
+  padding-left: var(--space-6);
+  padding-right: var(--space-6);
 }
 
 .profile-view-images {
@@ -135,14 +132,16 @@
 
 .profile-view-back {
   display: inline-block;
-  color: var(--color-accent);
+  color: var(--color-text-muted);
   font-size: var(--text-sm);
-  margin-bottom: var(--space-4);
+  font-weight: 500;
   text-decoration: none;
+  padding: var(--space-1) 0;
+  margin-bottom: var(--space-4);
 }
 
 .profile-view-back:hover {
-  text-decoration: underline;
+  color: var(--color-accent);
 }
 
 .profile-view-header-row {

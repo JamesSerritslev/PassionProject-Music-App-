@@ -73,7 +73,7 @@ body {
 
 @media (max-width: 360px) {
   #root {
-    padding-top: 88px;
+    padding-top: 128px;
   }
 }
 
@@ -109,5 +109,11 @@ img {
 @media (max-width: 480px) {
   main.has-auth-bar {
     padding-top: 44px;
+  }
+}
+
+@media (max-width: 360px) {
+  main.has-auth-bar {
+    padding-top: 48px;
   }
 }
